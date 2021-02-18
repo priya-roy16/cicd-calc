@@ -1,16 +1,79 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Resources": {
-        "S3Bucket": {
-            "Type": "AWS::S3::Bucket"
+        "LambdaRole" : {
+            "Type" : "AWS::IAM::Role",
+            "Properties" : {
+              "AssumeRolePolicyDocument": {
+                "Version" : "2012-10-17",
+                "Statement" : [
+                  {
+                    "Effect" : "Allow",
+                    "Principal" : {
+                      "Service" : ["lambda.amazonaws.com","s3.amazonaws.com"]
+                    },
+                    "Action" : [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Path" : "/",
+              "ManagedPolicyArns":["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole","arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB","arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"],
+              "Policies": [{
+                               "PolicyName": "policyname",
+                               "PolicyDocument": {
+                                         "Version": "2012-10-17",
+                                         "Statement": [{
+                                      "Effect": "Allow",
+                                                    "Resource": "*",
+                                                    "Action": [
+                                                                "dynamodb:PutItem",
+                                                                "dynamodb:BatchWriteItem"
+                                                    ]
+                                        }]
+                               }
+                      }]
+            }
+         },
+        "PriyaJenkinsLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Handler": "index.lambda_handler",
+                "Role": {
+                    "Fn::GetAtt": [
+                        "LambdaRole",
+                        "Arn"
+                    ]
+                },
+                "Code": {
+                    "ZipFile": {
+                        "Fn::Join": [
+                            "\n",
+                            [
+                                "import json",
+                                "def lambda_handler(event, context):",
+                                "",  
+                                "   return {",
+                                "      'statusCode': 200,",
+                                "      'body': json.dumps('Uploaded to DynamoDB Table')",
+                                "   }"
+                            ]
+                        ]
+                    }
+                },
+                "Runtime": "python3.7",
+                "Timeout": 900,
+                "MemorySize": 3008
+            }
         }
     },
     "Outputs": {
-        "BucketName": {
+        "LambdaFunctionName": {
             "Value": {
-                "Ref": "S3Bucket"
+                "Ref": "PriyaJenkinsLambdaFunction"
             },
-            "Description": "Name of the sample Amazon S3 bucket."
+            "Description": "Name of the sample lambda function."
         }
     }
 }
