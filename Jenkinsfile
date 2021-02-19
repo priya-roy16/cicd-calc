@@ -5,7 +5,6 @@ pipeline {
             steps {
                 bat 'docker pull python'
                 bat  'docker build -t cicd-calc . '
-                bat  'docker run --rm --name my-running-app cicd-calc'
             }
         }
         stage('Submit Stack') {
